@@ -1,1 +1,1059 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+  <title>HAY'Tec — Marketplace Madagascar</title>
+
+  <meta
+    name="description"
+    content="HAY'Tec — Marketplace malagasy. Découvrez des produits, ajoutez-les au panier et préparez vos commandes."
+  >
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --primary: #6d28d9;
+      --primary-dark: #4c1d95;
+      --blue: #14285a;
+      --orange: #f97316;
+      --green: #16a34a;
+      --red: #dc2626;
+      --background: #f7f7fb;
+      --white: #ffffff;
+      --text: #172033;
+      --muted: #687086;
+      --border: #e5e7eb;
+      --shadow: 0 8px 25px rgba(20, 40, 90, 0.08);
+      --radius: 16px;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: var(--background);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .container {
+      width: min(1180px, 92%);
+      margin: auto;
+    }
+
+    /* HEADER */
+
+    header {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-main {
+      min-height: 72px;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .logo {
+      font-size: 25px;
+      font-weight: 800;
+      color: var(--primary);
+      white-space: nowrap;
+    }
+
+    .logo span {
+      color: var(--orange);
+    }
+
+    .search-wrapper {
+      flex: 1;
+      position: relative;
+    }
+
+    .search-wrapper input {
+      width: 100%;
+      height: 44px;
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 0 48px 0 18px;
+      outline: none;
+      background: #fafafa;
+    }
+
+    .search-wrapper input:focus {
+      border-color: var(--primary);
+      background: white;
+    }
+
+    .search-icon {
+      position: absolute;
+      right: 17px;
+      top: 10px;
+      font-size: 20px;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .header-btn {
+      border: 1px solid var(--border);
+      background: white;
+      border-radius: 12px;
+      padding: 10px 13px;
+      color: var(--blue);
+    }
+
+    .cart-button {
+      position: relative;
+      border: none;
+      background: var(--primary);
+      color: white;
+      padding: 11px 15px;
+      border-radius: 12px;
+      font-weight: bold;
+    }
+
+    .cart-count {
+      position: absolute;
+      right: -7px;
+      top: -7px;
+      min-width: 21px;
+      height: 21px;
+      padding: 0 5px;
+      background: var(--orange);
+      color: white;
+      border-radius: 50px;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* HERO */
+
+    .hero {
+      margin-top: 25px;
+      border-radius: 24px;
+      padding: 55px 35px;
+      background: linear-gradient(135deg, #14285a, #6d28d9);
+      color: white;
+      overflow: hidden;
+    }
+
+    .hero h1 {
+      font-size: clamp(30px, 5vw, 52px);
+      max-width: 700px;
+      line-height: 1.08;
+      margin-bottom: 15px;
+    }
+
+    .hero p {
+      max-width: 620px;
+      color: #e9e8ff;
+      font-size: 18px;
+      margin-bottom: 25px;
+    }
+
+    .hero-btn {
+      border: none;
+      background: white;
+      color: var(--primary);
+      font-weight: bold;
+      padding: 13px 20px;
+      border-radius: 12px;
+    }
+
+    /* SECTIONS */
+
+    section {
+      margin-top: 42px;
+    }
+
+    .section-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+      gap: 10px;
+    }
+
+    .section-title h2 {
+      font-size: 25px;
+      color: var(--blue);
+    }
+
+    .section-title small {
+      color: var(--muted);
+    }
+
+    /* CATEGORIES */
+
+    .categories {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding-bottom: 7px;
+    }
+
+    .category {
+      flex: 0 0 auto;
+      border: 1px solid var(--border);
+      background: white;
+      padding: 12px 18px;
+      border-radius: 50px;
+      color: var(--blue);
+      font-weight: bold;
+    }
+
+    .category.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    /* PRODUCTS */
+
+    .products {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+    }
+
+    .product-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      transition: transform .2s ease;
+    }
+
+    .product-card:hover {
+      transform: translateY(-3px);
+    }
+
+    .product-image {
+      height: 190px;
+      background: #f1f2f7;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .product-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .placeholder {
+      font-size: 52px;
+      color: #a0a6b4;
+    }
+
+    .product-content {
+      padding: 15px;
+    }
+
+    .product-category {
+      font-size: 12px;
+      color: var(--primary);
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    .product-name {
+      font-size: 16px;
+      font-weight: bold;
+      min-height: 48px;
+    }
+
+    .product-price {
+      color: var(--orange);
+      font-size: 19px;
+      font-weight: 800;
+      margin: 8px 0;
+    }
+
+    .product-stock {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .add-cart {
+      width: 100%;
+      border: none;
+      background: var(--primary);
+      color: white;
+      padding: 11px;
+      border-radius: 10px;
+      font-weight: bold;
+    }
+
+    .add-cart:disabled {
+      background: #b8bbc4;
+      cursor: not-allowed;
+    }
+
+    /* ADVANTAGES */
+
+    .advantages {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+    }
+
+    .advantage {
+      background: white;
+      border: 1px solid var(--border);
+      padding: 22px;
+      border-radius: var(--radius);
+      text-align: center;
+    }
+
+    .advantage-icon {
+      font-size: 30px;
+      margin-bottom: 10px;
+    }
+
+    .advantage h3 {
+      color: var(--blue);
+      margin-bottom: 6px;
+    }
+
+    .advantage p {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    /* EMPTY / LOADING */
+
+    .message {
+      grid-column: 1 / -1;
+      background: white;
+      border: 1px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 35px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .error {
+      color: var(--red);
+    }
+
+    /* CART DRAWER */
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.45);
+      display: none;
+      z-index: 200;
+    }
+
+    .overlay.active {
+      display: block;
+    }
+
+    .cart-panel {
+      position: fixed;
+      right: 0;
+      top: 0;
+      height: 100%;
+      width: min(430px, 94%);
+      background: white;
+      z-index: 201;
+      transform: translateX(100%);
+      transition: transform .25s ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .cart-panel.active {
+      transform: translateX(0);
+    }
+
+    .cart-header {
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .close-cart {
+      border: none;
+      background: #f1f1f5;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+    }
+
+    .cart-items {
+      flex: 1;
+      overflow-y: auto;
+      padding: 15px;
+    }
+
+    .cart-item {
+      display: flex;
+      gap: 12px;
+      border-bottom: 1px solid var(--border);
+      padding: 14px 0;
+    }
+
+    .cart-item-image {
+      width: 65px;
+      height: 65px;
+      background: #f1f2f7;
+      border-radius: 10px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .cart-item-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .cart-item-info {
+      flex: 1;
+    }
+
+    .cart-item-name {
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    .cart-item-price {
+      color: var(--orange);
+      font-weight: bold;
+      margin-top: 3px;
+    }
+
+    .quantity-controls {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-top: 7px;
+    }
+
+    .quantity-controls button {
+      width: 27px;
+      height: 27px;
+      border: 1px solid var(--border);
+      background: white;
+      border-radius: 6px;
+    }
+
+    .remove-item {
+      border: none;
+      background: transparent;
+      color: var(--red);
+      font-size: 12px;
+    }
+
+    .cart-footer {
+      border-top: 1px solid var(--border);
+      padding: 18px;
+    }
+
+    .cart-total {
+      display: flex;
+      justify-content: space-between;
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 15px;
+    }
+
+    .checkout-btn {
+      width: 100%;
+      border: none;
+      background: var(--green);
+      color: white;
+      padding: 14px;
+      border-radius: 11px;
+      font-weight: bold;
+    }
+
+    /* MODAL */
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 300;
+      padding: 20px;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: white;
+      width: min(500px, 100%);
+      border-radius: 18px;
+      padding: 25px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .modal-close {
+      border: none;
+      background: #f1f1f5;
+      width: 35px;
+      height: 35px;
+      border-radius: 50%;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      outline: none;
+    }
+
+    .form-group textarea {
+      min-height: 90px;
+      resize: vertical;
+    }
+
+    .payment-methods {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .payment-method {
+      border: 1px solid var(--border);
+      background: white;
+      padding: 11px 5px;
+      border-radius: 9px;
+      font-size: 12px;
+    }
+
+    .payment-method.selected {
+      border: 2px solid var(--primary);
+      background: #f5f0ff;
+    }
+
+    .submit-order {
+      width: 100%;
+      border: none;
+      background: var(--primary);
+      color: white;
+      padding: 14px;
+      border-radius: 10px;
+      font-weight: bold;
+      margin-top: 8px;
+    }
+
+    /* FOOTER */
+
+    footer {
+      margin-top: 55px;
+      background: var(--blue);
+      color: white;
+      padding: 40px 0 25px;
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 30px;
+    }
+
+    footer h3 {
+      margin-bottom: 10px;
+    }
+
+    footer p,
+    footer li {
+      color: #d8ddec;
+      font-size: 14px;
+    }
+
+    footer ul {
+      list-style: none;
+    }
+
+    footer li {
+      margin-bottom: 7px;
+    }
+
+    .copyright {
+      border-top: 1px solid rgba(255,255,255,.15);
+      margin-top: 25px;
+      padding-top: 20px;
+      color: #b9bfd2;
+      font-size: 13px;
+    }
+
+    /* RESPONSIVE */
+
+    @media (max-width: 900px) {
+      .products {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .advantages {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 650px) {
+      .header-main {
+        flex-wrap: wrap;
+        padding: 12px 0;
+      }
+
+      .search-wrapper {
+        order: 3;
+        flex-basis: 100%;
+      }
+
+      .header-btn {
+        display: none;
+      }
+
+      .hero {
+        padding: 35px 22px;
+      }
+
+      .products {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+      }
+
+      .product-image {
+        height: 150px;
+      }
+
+      .product-content {
+        padding: 11px;
+      }
+
+      .product-name {
+        font-size: 14px;
+      }
+
+      .product-price {
+        font-size: 16px;
+      }
+
+      .advantages {
+        grid-template-columns: 1fr;
+      }
+
+      .footer-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div class="container header-main">
+
+      <a href="#" class="logo">
+        HAY<span>'</span>Tec
+      </a>
+
+      <div class="search-wrapper">
+        <input
+          id="searchInput"
+          type="search"
+          placeholder="Rechercher un produit..."
+          autocomplete="off"
+        >
+        <span class="search-icon">🔎</span>
+      </div>
+
+      <div class="header-actions">
+        <button class="header-btn" onclick="openLogin()">
+          👤 Compte
+        </button>
+
+        <button class="cart-button" onclick="openCart()">
+          🛒 Panier
+          <span id="cartCount" class="cart-count">0</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- HERO -->
+    <section class="hero">
+      <h1>
+        Achetez facilement sur HAY'Tec
+      </h1>
+
+      <p>
+        Découvrez des produits adaptés à vos besoins,
+        avec des prix en Ariary et des solutions de paiement
+        Mobile Money adaptées à Madagascar.
+      </p>
+
+      <button class="hero-btn" onclick="scrollToProducts()">
+        Découvrir les produits
+      </button>
+    </section>
+
+    <!-- CATEGORIES -->
+    <section>
+      <div class="section-title">
+        <h2>Catégories</h2>
+      </div>
+
+      <div id="categories" class="categories">
+        <button class="category active" onclick="filterCategory('all', this)">
+          Tous
+        </button>
+
+        <div class="message">
+          Chargement des catégories...
+        </div>
+      </div>
+    </section>
+
+    <!-- PRODUCTS -->
+    <section id="productsSection">
+
+      <div class="section-title">
+        <div>
+          <h2>Nos produits</h2>
+          <small id="productResult">
+            Chargement...
+          </small>
+        </div>
+      </div>
+
+      <div id="products" class="products">
+        <div class="message">
+          Chargement des produits...
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ADVANTAGES -->
+    <section>
+
+      <div class="section-title">
+        <h2>Pourquoi HAY'Tec ?</h2>
+      </div>
+
+      <div class="advantages">
+
+        <div class="advantage">
+          <div class="advantage-icon">🇲🇬</div>
+          <h3>Marketplace malagasy</h3>
+          <p>
+            Une plateforme pensée pour les acheteurs à Madagascar.
+          </p>
+        </div>
+
+        <div class="advantage">
+          <div class="advantage-icon">💰</div>
+          <h3>Prix en Ariary</h3>
+          <p>
+            Les prix sont affichés directement en MGA.
+          </p>
+        </div>
+
+        <div class="advantage">
+          <div class="advantage-icon">📱</div>
+          <h3>Mobile Money</h3>
+          <p>
+            Préparation des paiements MVola, Orange Money et Airtel Money.
+          </p>
+        </div>
+
+        <div class="advantage">
+          <div class="advantage-icon">📦</div>
+          <h3>Commande simple</h3>
+          <p>
+            Sélectionnez vos produits et préparez votre commande facilement.
+          </p>
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- OVERLAY -->
+  <div id="overlay" class="overlay" onclick="closeCart()"></div>
+
+  <!-- CART -->
+  <aside id="cartPanel" class="cart-panel">
+
+    <div class="cart-header">
+      <h2>Votre panier</h2>
+
+      <button class="close-cart" onclick="closeCart()">
+        ✕
+      </button>
+    </div>
+
+    <div id="cartItems" class="cart-items">
+      <div class="message">
+        Votre panier est vide.
+      </div>
+    </div>
+
+    <div class="cart-footer">
+
+      <div class="cart-total">
+        <span>Total</span>
+        <span id="cartTotal">0 Ar</span>
+      </div>
+
+      <button class="checkout-btn" onclick="openCheckout()">
+        Passer la commande
+      </button>
+
+    </div>
+
+  </aside>
+
+  <!-- CHECKOUT MODAL -->
+  <div id="checkoutModal" class="modal">
+
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h2>Finaliser la commande</h2>
+
+        <button class="modal-close" onclick="closeCheckout()">
+          ✕
+        </button>
+      </div>
+
+      <form id="checkoutForm">
+
+        <div class="form-group">
+          <label for="customerName">
+            Nom complet
+          </label>
+
+          <input
+            id="customerName"
+            type="text"
+            required
+            placeholder="Votre nom complet"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="customerPhone">
+            Téléphone
+          </label>
+
+          <input
+            id="customerPhone"
+            type="tel"
+            required
+            placeholder="03X XX XXX XX"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="customerAddress">
+            Adresse
+          </label>
+
+          <textarea
+            id="customerAddress"
+            required
+            placeholder="Votre adresse de livraison"
+          ></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="customerCity">
+            Ville
+          </label>
+
+          <input
+            id="customerCity"
+            type="text"
+            required
+            placeholder="Ex : Toamasina"
+          >
+        </div>
+
+        <div class="form-group">
+
+          <label>
+            Mode de paiement
+          </label>
+
+          <div class="payment-methods">
+
+            <button
+              type="button"
+              class="payment-method"
+              data-method="mvola"
+              onclick="selectPayment('mvola', this)"
+            >
+              📱 MVola
+            </button>
+
+            <button
+              type="button"
+              class="payment-method"
+              data-method="orange_money"
+              onclick="selectPayment('orange_money', this)"
+            >
+              🟠 Orange Money
+            </button>
+
+            <button
+              type="button"
+              class="payment-method"
+              data-method="airtel_money"
+              onclick="selectPayment('airtel_money', this)"
+            >
+              🔴 Airtel Money
+            </button>
+
+          </div>
+
+        </div>
+
+        <div class="form-group">
+
+          <label for="transactionReference">
+            Référence de transaction
+          </label>
+
+          <input
+            id="transactionReference"
+            type="text"
+            placeholder="Ex : 123456789"
+          >
+
+        </div>
+
+        <button
+          class="submit-order"
+          type="submit"
+        >
+          Confirmer la commande
+        </button>
+
+      </form>
+
+    </div>
+
+  </div>
+
+  <!-- LOGIN MODAL -->
+  <div id="loginModal" class="modal">
+
+    <div class="modal-content">
+
+      <div class="modal-header">
+
+        <h2>Mon compte</h2>
+
+        <button
+          class="modal-close"
+          onclick="closeLogin()"
+        >
+          ✕
+        </button>
+
+      </div>
+
+      <p style="color:#687086;margin-bottom:20px;">
+        La connexion client sera activée dans la prochaine étape.
+      </p>
+
+      <button
+        class="submit-order"
+        onclick="closeLogin()"
+      >
+        Continuer
+      </button>
+
+    </div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+
+    <div class="container">
+
+      <div class="footer-grid">
+
+        <div>
+          <h3>HAY'Tec</h3>
+
+          <p>
+      
