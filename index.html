@@ -1651,30 +1651,133 @@ document
         );
 
         return;
-      }
+async function loadData() {
 
-      alert(
-        "Commande prête !\n\n" +
-        "Client : " + name + "\n" +
-        "Téléphone : " + phone + "\n" +
-        "Ville : " + city + "\n" +
-        "Paiement : " + selectedPayment + "\n" +
-        "Référence : " +
-        (
-          transactionRef ||
-          "Non renseignée"
-        ) +
-        "\n\n" +
-        "L'enregistrement réel de la commande sera activé à l'étape suivante."
+  const container =
+    document.getElementById("products");
+
+  const result =
+    document.getElementById("productResult");
+
+  try {
+
+    if (!window.supabase) {
+      throw new Error(
+        "La bibliothèque Supabase n'est pas chargée."
+      );
+    }
+
+    if (container) {
+      container.innerHTML = `
+        <div class="message">
+          Chargement des produits...
+        </div>
+      `;
+    }
+
+    const productsRequest =
+      await db
+        .from("products")
+        .select("*")
+        .eq("active", true)
+        .order("created_at", {
+          ascending: false
+        });
+
+    if (productsRequest.error) {
+      throw new Error(
+        "Erreur produits : " +
+        productsRequest.error.message
+      );
+    }
+
+    products =
+      productsRequest.data || [];
+
+    const categoriesRequest =
+      await db
+        .from("categories")
+        .select("*")
+        .order("name");
+
+    if (categoriesRequest.error) {
+
+      console.warn(
+        "Erreur catégories :",
+        categoriesRequest.error
       );
 
+      categories = [];
+
+    } else {
+
+      categories =
+        categoriesRequest.data || [];
+
     }
-  );
+
+    renderCategories();
+
+    renderProducts();
+
+    if (result) {
+
+      result.textContent =
+        products.length +
+        " produit(s) disponible(s)";
+
+    }
+
+  } catch (error) {
+
+    console.error(
+      "Erreur HAY'Tec :",
+      error
+    );
+
+    if (result) {
+
+      result.textContent =
+        "Impossible de charger les produits.";
+
+    }
+
+    if (container) {
+
+      container.innerHTML = `
+        <div class="message error">
+
+          <strong>
+            Impossible de charger les produits.
+          </strong>
+
+          <p>
+            ${esc(
+              error.message ||
+              "Erreur inconnue"
+            )}
+          </p>
+
+          <button
+            class="submit-btn"
+            onclick="loadData()"
+          >
+            Réessayer
+          </button>
+
+        </div>
+      `;
+
+    }
+
+  }
+
+}
 
 renderCart();
 
 loadData();
-      </script>
+</script>
 
 </body>
 </html>
